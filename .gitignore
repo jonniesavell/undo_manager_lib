@@ -1,0 +1,14 @@
+# CLion/JetBrains
+.idea/
+
+# Build directories
+cmake-build-*/
+
+# macOS junk
+.DS_Store
+
+# C/C++ build junk
+*.o
+*.so
+*.dylib
+*.a
