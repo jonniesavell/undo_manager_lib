@@ -59,6 +59,7 @@ static undo_stack_t * get_stack() {
 
         if (return_value != 0) {
             fprintf(stderr, "thread specific data mutation failed\n");
+            abort();
         }
     }
 
