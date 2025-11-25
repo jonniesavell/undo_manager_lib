@@ -5,7 +5,7 @@
 
 typedef struct undo_stack_t {
     undo_action_t * top;
-    size_t count;
+    undo_sp_t count;
 } undo_stack_t;
 
 static pthread_key_t key;
@@ -27,8 +27,6 @@ static void remove_one(undo_stack_t * stack, int to_delete) {
 }
 
 static void destroy(void * memory) {
-    fprintf(stdout, "function destroy called\n");
-
     undo_stack_t * stack = (undo_stack_t *) memory;
 
     while (stack->count > 0) {
@@ -93,7 +91,7 @@ static void commit_impl() {
     stack->count = 0;
 }
 
-static void abort_impl() {
+static void rollback_impl() {
     undo_stack_t * stack = get_stack();
     undo_action_t * cur = stack->top;
 
@@ -125,9 +123,9 @@ static void commit_to_impl(undo_sp_t sp) {
 // Exported Envelope
 undo_manager_t Undo = {
     .push = push_impl,
-    .commit = commit_impl,
-    .abort = abort_impl,
     .mark = mark_impl,
     .rollback_to = rollback_to_impl,
-    .commit_to = commit_to_impl
+    .rollback = rollback_impl,   // rollback_to(beginning_of_time)
+    .commit_to = commit_to_impl,
+    .commit = commit_impl        // commit_to(beginning_of_time)
 };

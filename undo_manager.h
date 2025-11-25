@@ -15,7 +15,7 @@ typedef struct undo_action_t {
 typedef struct undo_manager_t {
     void (*push)(undo_fn undo, void *context);
     void (*commit)(void);
-    void (*abort)(void);
+    void (*rollback)(void);
     undo_sp_t (*mark)(void);
     void (*rollback_to)(undo_sp_t sp);
     void (*commit_to)(undo_sp_t sp);

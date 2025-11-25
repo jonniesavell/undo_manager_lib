@@ -15,70 +15,87 @@ lot of functions, but it also makes failures easy to
 handle.
 
 ```
+#include "undo_manager.h"
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 typedef struct {
     char * filename;
-    int file_descriptor;
-} file_context_t;
+} undo_file_context_t;
 
-void undo_create_file(void * ctx) {
-    file_context_t * fctx = (file_context_t *) ctx;
-    close(fctx->file_descriptor);
+void undo_file_creation(void * ctx) {
+    undo_file_context_t * fctx = (undo_file_context_t *) ctx;
     unlink(fctx->filename);
     free(fctx->filename);
     free(fctx);
 }
 
-void create_temp_file(const char * name) {
+int main() {
+    // previous work ... save the point to which we rollback or commit.
+    undo_sp_t original_save_point = Undo.mark();
+
     char contents[] = "temporary data";
+    char name[] = "/tmp/tmp1.txt";
     int file_descriptor = open(name, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
-    int number_of_bytes = 0;
 
     if (file_descriptor == -1) {
         perror("create file");
-        Undo.abort();
+        Undo.rollback_to(original_save_point);
         exit(1);
     }
 
-    while ((number_of_bytes = write(file_descriptor, contents + number_of_bytes, strlen(contents) - number_of_bytes)) > 0) {
-    }
+    undo_file_context_t * ctx = malloc(sizeof(undo_file_context_t));
+    ctx->filename = strdup(name);
+    Undo.push(undo_file_creation, ctx);
+
+    ssize_t number_of_bytes = 0;
+
+    do {
+        number_of_bytes = write(file_descriptor, contents + number_of_bytes, strlen(contents) - number_of_bytes);
+    } while (number_of_bytes > 0);
 
     if (number_of_bytes == -1) {
         perror("write file");
+        Undo.rollback_to(original_save_point);
+        exit(1);
     }
 
-    file_context_t * ctx = malloc(sizeof(file_context_t));
-    ctx->filename = strdup(name);
-    ctx->file_descriptor = file_descriptor;
-    Undo.push(undo_create_file, ctx);
-}
+    char contents2[] = "more temporary data";
+    char name2[] = "/tmp/tmp2.txt";
+    file_descriptor = open(name2, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    number_of_bytes = 0;
 
-int main() {
-    undo_sp_t save_point = Undo.mark();
-    create_temp_file("tmp1.txt");
-
-    int to_rollback = 1;
-
-    if (to_rollback) {
-        fprintf(stderr, "Error occurred, rolling back\n");
-        Undo.rollback_to(save_point);
-    } else {
-        fprintf(stdout, "delight occurred\n");
-        Undo.commit_to(save_point);
+    if (file_descriptor == -1) {
+        perror("create file");
+        Undo.rollback_to(original_save_point);
+        exit(1);
     }
 
-    undo_sp_t save_point2 = Undo.mark();
-    create_temp_file("tmp2.txt");
+    ctx = malloc(sizeof(undo_file_context_t));
+    ctx->filename = strdup(name2);
+    Undo.push(undo_file_creation, ctx);
 
-    to_rollback = 1;
+    number_of_bytes = 0;
 
-    if (to_rollback) {
-        fprintf(stderr, "Error occurred, rolling back\n");
-        Undo.rollback_to(save_point);
-    } else {
-        fprintf(stdout, "delight occurred\n");
-        Undo.commit_to(save_point);
+    do {
+        number_of_bytes = write(file_descriptor, contents2 + number_of_bytes, strlen(contents2) - number_of_bytes);
+    } while (number_of_bytes > 0);
+
+    if (number_of_bytes == -1) {
+        perror("write file");
+        Undo.rollback_to(original_save_point);
+        exit(1);
     }
+
+    // all resources have been created but an error is encountered. rollback_to the point in time before we started
+    //   creating resources. you can verify that no files created here remain in /tmp.
+
+    Undo.rollback_to(original_save_point);
 
     return 0;
 }
+
 '''
