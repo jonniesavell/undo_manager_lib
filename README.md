@@ -3,11 +3,13 @@
 have you ever wondered how to write a C program properly
 without try/catch or try/finally? suppose that you get an
 error from a system call whose result you needed in order
-to make progress. what do you do? your failure blocks grow
-larger and larger as you maintain more and more work to
-undo. the following example shows only two activities to
-undo but you can see how each successive failure block
-accrues additional undo activities.
+to make progress. what do you do? calling exit may not be
+enough because of state changes accumulated up to this
+point. your failure blocks grow larger and larger as you
+maintain more and more work to undo. the following example
+shows only two activities to undo but you can see how each
+successive failure block accrues additional undo
+activities.
 
 ```
 #include <fcntl.h>
