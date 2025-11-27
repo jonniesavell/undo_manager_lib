@@ -1,4 +1,4 @@
-# undo_manager_lib
+# libundo_manager
 
 have you ever wondered how to write a C program properly
 without try/catch or try/finally? suppose that you get an
