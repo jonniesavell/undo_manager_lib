@@ -17,7 +17,7 @@ static void remove_one(undo_stack_t * stack, int to_delete) {
         undo_action_t * cur = stack->top;
         stack->top = cur->next;
 
-        if (to_delete && (cur != NULL) && (cur->undo != NULL) && (cur->context != NULL)) {
+        if (to_delete && (cur->undo != NULL) && (cur->context != NULL)) {
             cur->undo(cur->context);
         }
 
@@ -30,7 +30,7 @@ static void destroy(void * memory) {
     undo_stack_t * stack = (undo_stack_t *) memory;
 
     while (stack->count > 0) {
-        remove_one(stack, 0); // 1 would be wrong, i think ...
+        remove_one(stack, 0);
     }
 
     pthread_setspecific(key, NULL);
