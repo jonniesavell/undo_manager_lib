@@ -80,28 +80,18 @@ static void push_impl(undo_fn fn, void * context) {
 
 static void commit_impl() {
     undo_stack_t * stack = get_stack();
-    undo_action_t * cur = stack->top;
 
-    while (cur) {
+    while (stack->count > 0) {
         remove_one(stack, 0);
-        cur = stack->top;
     }
-
-    stack->top = NULL;
-    stack->count = 0;
 }
 
 static void rollback_impl() {
     undo_stack_t * stack = get_stack();
-    undo_action_t * cur = stack->top;
 
-    while (cur) {
+    while (stack->count > 0) {
         remove_one(stack, 1);
-        cur = stack->top;
     }
-
-    stack->top = NULL;
-    stack->count = 0;
 }
 
 static void rollback_to_impl(undo_sp_t sp) {
